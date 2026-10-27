@@ -1,227 +1,1287 @@
-
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>旅日記帳 🐱</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>旅途記帳 Travel Wallet</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#f9f5ec;color:#394c40;font-family:system-ui,sans-serif}
-header{background:#dce9dc;padding:24px 18px;text-align:center}
-h1{margin:0;font-size:27px}
-header p{margin:8px 0;color:#657c69}
-main{max-width:550px;margin:auto;padding:16px 16px 90px}
-.card{background:white;border-radius:20px;padding:18px;margin-bottom:15px;box-shadow:0 3px 12px #53634b12}
-h2{font-size:18px;margin:0 0 15px}
-input,select,button{font:inherit}
-input,select{width:100%;padding:12px;margin:6px 0 12px;border:1px solid #ddd;border-radius:10px;background:#fff}
-button{border:0;border-radius:12px;background:#779b7d;color:white;padding:12px 18px;cursor:pointer}
+body{margin:0;background:#faf5ef;color:#42564a;font:15px system-ui,sans-serif}
+header{background:#e2ecdf;text-align:center;padding:20px 12px}
+h1{margin:0;font-size:25px}
+header p{margin:5px;color:#718372}
+main{max-width:650px;margin:auto;padding:15px 14px 100px}
+.card{background:#fff;border-radius:18px;padding:17px;margin-bottom:14px;box-shadow:0 2px 12px #53634b12}
+h2{font-size:19px;margin:0 0 14px}
+label{display:block;margin:12px 0 4px;font-size:13px;font-weight:600}
+input,select,button,textarea{font:inherit}
+input,select,textarea{width:100%;padding:11px;border:1px solid #d6ddd3;border-radius:10px;background:white;color:#42564a}
+button{border:0;border-radius:10px;background:#7e9f85;color:white;padding:11px;cursor:pointer}
 button:disabled{opacity:.5}
-.secondary{background:#eee9df;color:#44594a}
+.secondary{background:#edf2eb;color:#526b58}
+.danger{background:#f6e7e5;color:#a45a53}
 .full{width:100%}
-.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.stat{background:#f2f6ef;padding:13px;border-radius:12px}
-.stat b{display:block;font-size:21px;margin-top:6px}
-small{color:#798578}
-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;justify-content:space-around;padding:10px 4px;border-top:1px solid #ddd}
-nav button{background:none;color:#55745d;padding:9px 5px;font-size:13px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.row>*{min-width:0}
+.flex{display:flex;gap:8px}
+.flex>*{flex:1}
+.muted,small{color:#78897c;font-size:12px}
+.hidden{display:none!important}
 .page{display:none}
 .page.active{display:block}
-.item{padding:12px 0;border-bottom:1px solid #eee}
-.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.pill{background:#e8efe5;border-radius:30px;padding:5px 10px;font-size:12px}
-.cat{text-align:center;font-size:55px;margin:10px}
-.bar{height:12px;background:#e8e8e1;border-radius:12px;overflow:hidden}
-.fill{height:100%;background:#83a78b;width:0}
-label{font-size:13px;font-weight:600}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:#f0f5ee;padding:12px;border-radius:12px}
+.stat strong{display:block;font-size:19px;overflow-wrap:anywhere}
+.item{border-bottom:1px solid #eee;padding:12px 0}
+.item:last-child{border:0}
+.trip{border:1px solid #e1e9df;border-radius:13px;padding:13px;margin:10px 0}
+.tag{display:inline-block;background:#eaf1e7;border-radius:20px;padding:5px 9px;font-size:12px}
+.nav{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid #e1e7df;display:flex;padding:7px 4px env(safe-area-inset-bottom)}
+.nav button{flex:1;background:transparent;color:#58725f;font-size:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.notice{background:#fff7e8;padding:12px;border-radius:12px;font-size:13px}
+.status{color:#a15b50;font-size:13px;margin-top:10px;overflow-wrap:anywhere}
+.bar{background:#edf1e9;height:10px;border-radius:20px;overflow:hidden}
+.fill{background:#8eaf93;height:100%;width:0}
+.chips{display:flex;gap:7px;overflow:auto;margin:12px 0}
+.chips button{white-space:nowrap;padding:8px}
+.chips .selected{background:#4e7658}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;background:#f5f7f3;padding:12px;border-radius:10px}
+img.preview{max-width:100%;max-height:300px;border-radius:10px}
 </style>
 </head>
 <body>
+
 <header>
-<div style="font-size:42px">🐱🌸🗻</div>
-<h1>旅日記帳</h1>
-<p>Japan Trip Wallet</p>
-<small>收集旅途中的每一筆美好回憶</small>
+<div style="font-size:32px">🐱 🌸 🧳</div>
+<h1>旅途記帳</h1>
+<p>Travel Wallet · 收藏每一趟旅行</p>
+<small id="accountLabel">正在確認登入狀態…</small>
 </header>
+
 <main>
+<section id="auth" class="card hidden">
+<h2>🔐 登入旅行帳本</h2>
+<p class="muted">使用 Email 登入，旅行資料儲存在自己的雲端帳戶。</p>
+<label>Email</label>
+<input id="email" type="email" autocomplete="email">
+<label>密碼</label>
+<input id="password" type="password" autocomplete="current-password">
+<div class="flex" style="margin-top:12px">
+<button id="signIn">登入</button>
+<button id="signUp" class="secondary">註冊</button>
+</div>
+<p class="muted">註冊後可能需要先至信箱完成驗證。</p>
+<div id="authStatus" class="status"></div>
+</section>
+
+<div id="app" class="hidden">
+<div class="row" style="margin-bottom:12px">
+<small id="userEmail"></small>
+<button id="signOut" class="secondary">登出</button>
+</div>
+
 <section id="home" class="page active">
 <div class="card">
-<h2>🌸 我的日本旅行</h2>
-<label>旅行名稱</label>
-<input id="trip" value="日本自由行">
-<label>旅行預算（日幣）</label>
-<input id="budget" type="number" value="100000">
-<label>1 日幣等於多少台幣</label>
-<input id="rate" type="number" step="0.0001" value="0.21">
-<button class="full" onclick="saveSettings()">儲存旅行設定</button>
+<div class="row">
+<h2>🌏 我的旅行</h2>
+<button id="newTrip">＋ 新增旅行</button>
 </div>
+<div id="countryFilters" class="chips"></div>
+<div class="grid2">
+<div>
+<label>年份</label>
+<select id="yearFilter"></select>
+</div>
+<div>
+<label>月份</label>
+<select id="monthFilter"></select>
+</div>
+</div>
+<div id="tripList"></div>
+</div>
+
 <div class="card">
-<h2>💰 旅行小金庫</h2>
+<h2>📦 舊版資料備份</h2>
+<p class="muted">若之前使用同一瀏覽器記帳，可將舊版資料備份為 JSON。此功能不會自動將舊資料轉進雲端。</p>
+<button id="legacyExport" class="secondary full">匯出舊版資料</button>
+<p id="legacyCount" class="muted"></p>
+</div>
+</section>
+
+<section id="tripEdit" class="page">
+<div class="card">
+<h2 id="tripEditTitle">🧳 新增旅行</h2>
+
+<label>旅行名稱 *</label>
+<input id="tripName" placeholder="例如：東京自由行">
+
+<label>國家／地區 *</label>
+<select id="tripCountry">
+<option>日本</option>
+<option>韓國</option>
+<option>台灣</option>
+<option>泰國</option>
+<option>美國</option>
+<option value="custom">＋ 自訂國家／地區</option>
+</select>
+<input id="tripCustomCountry" class="hidden" placeholder="輸入國家名稱">
+
+<label>城市／地區</label>
+<input id="tripRegions" placeholder="例如：東京、京都、大阪">
+
+<div class="grid2">
+<div>
+<label>出發日期</label>
+<input id="tripStart" type="date">
+</div>
+<div>
+<label>回程日期</label>
+<input id="tripEnd" type="date">
+</div>
+</div>
+
+<div class="grid2">
+<div>
+<label>貨幣代碼</label>
+<input id="tripCurrency" maxlength="3" value="JPY">
+</div>
+<div>
+<label>預算（當地貨幣）</label>
+<input id="tripBudget" type="number" min="0" step="any" value="0">
+</div>
+</div>
+
+<label>匯率：1 單位當地貨幣等於多少台幣</label>
+<input id="tripRate" type="number" min="0.000001" step="any" value="0.21">
+<p class="muted">匯率目前需手動設定。畫面上的預設值只是範例，不代表即時匯率。</p>
+
+<div class="flex">
+<button id="cancelTrip" class="secondary">取消</button>
+<button id="saveTrip">儲存旅行</button>
+</div>
+<div id="tripStatus" class="status"></div>
+</div>
+</section>
+
+<section id="detail" class="page">
+<div class="card">
+<div class="row">
+<button id="backTrips" class="secondary">← 所有旅行</button>
+<button id="editTrip" class="secondary">編輯設定</button>
+</div>
+<h2 id="detailTitle" style="margin-top:15px"></h2>
+<p id="detailMeta" class="muted"></p>
+
 <div class="stats">
-<div class="stat">總預算<b id="totalBudget">¥0</b></div>
-<div class="stat">已花費<b id="spent">¥0</b></div>
-<div class="stat">剩餘預算<b id="remain">¥0</b></div>
-<div class="stat">約新台幣<b id="twd">NT$0</b></div>
+<div class="stat">旅行預算<strong id="budgetShow"></strong></div>
+<div class="stat">已花費<strong id="spentShow"></strong></div>
+<div class="stat">剩餘預算<strong id="remainShow"></strong></div>
+<div class="stat">換算台幣<strong id="twdShow"></strong></div>
 </div>
-<p>預算使用進度</p>
-<div class="bar"><div class="fill" id="progress"></div></div>
+
+<p class="muted">預算使用進度</p>
+<div class="bar"><div id="budgetFill" class="fill"></div></div>
+<button id="goAdd" class="full" style="margin-top:15px">＋ 新增消費</button>
 </div>
-<div class="card">
-<div class="cat">🐱🧳</div>
-<p style="text-align:center">今天也一起記錄日本旅行吧！</p>
-<button class="full" onclick="show('add')">＋ 新增消費紀錄</button>
-</div>
-</section>
-<section id="add" class="page">
-<div class="card">
-<h2>📸 收據記帳</h2>
-<p>拍照保存日本收據</p>
-<input type="file" id="photo" accept="image/*" capture="environment">
-<small>雲端 AI 自動辨識尚未啟用，現階段請手動填寫。</small>
-</div>
-<div class="card">
-<h2>✏️ 新增消費</h2>
-<label>日期</label>
-<input id="date" type="date">
-<label>店家</label>
-<input id="shop" placeholder="例如：松本清">
-<label>商品（日文或中文）</label>
-<input id="product" placeholder="例如：面膜">
-<label>金額（日幣）</label>
-<input id="amount" type="number" placeholder="例如：1850">
-<label>消費分類</label>
-<select id="category">
-<option>藥妝</option><option>食品</option>
-<option>文具</option><option>服飾</option>
-<option>交通</option><option>住宿</option>
-<option>伴手禮</option><option>其他</option>
-</select>
-<label>付款方式</label>
-<select id="payment">
-<option>現金</option><option>信用卡</option><option>其他</option>
-</select>
-<label>付款人</label>
-<input id="payer" value="我">
-<label>分攤人數</label>
-<input id="people" type="number" min="1" value="1">
-<button class="full" onclick="addExpense()">🐾 儲存這筆消費</button>
-</div>
-</section>
-<section id="records" class="page">
+
 <div class="card">
 <h2>🧾 消費紀錄</h2>
-<div id="recordList"></div>
+<div id="expenseList"></div>
+</div>
+
+<div class="card">
+<h2>📊 分類統計</h2>
+<div id="categoryStats"></div>
+<button id="exportTrip" class="secondary full" style="margin-top:12px">匯出 CSV（Excel 可開啟）</button>
 </div>
 </section>
-<section id="split" class="page">
+
+<section id="add" class="page">
 <div class="card">
-<h2>👫 旅伴拆帳</h2>
-<p>每筆消費依設定人數平均分攤。</p>
-<div id="splitList"></div>
+<div class="row">
+<h2>✏️ 新增消費</h2>
+<button id="cancelExpense" class="secondary">取消</button>
+</div>
+<p id="addTripLabel" class="muted"></p>
+
+<div class="notice">
+🐱 免費收據辨識：使用手機瀏覽器辨識文字，不需付費 API。辨識結果請確認後再儲存。
+</div>
+
+<label>📷 拍照或上傳收據</label>
+<input id="receiptPhoto" type="file" accept="image/*">
+
+<div class="flex" style="margin-top:10px">
+<button id="runOCR" class="secondary">🔍 免費辨識收據</button>
+<button id="clearOCR" class="secondary">清除結果</button>
+</div>
+
+<div id="ocrStatus" class="status"></div>
+<div id="ocrResult" class="hidden">
+<h3>辨識結果</h3>
+<img id="receiptPreview" class="preview hidden" alt="收據預覽">
+<pre id="ocrText"></pre>
+<p class="muted">日文、韓文及英文文字可嘗試辨識。商品翻譯僅提供基本詞彙對照，可自行修改。</p>
+</div>
+
+<label>日期</label>
+<input id="expenseDate" type="date">
+
+<label>店家</label>
+<input id="expenseShop" placeholder="例如：便利商店">
+
+<label>商品名稱／原文</label>
+<input id="expenseItem" placeholder="例如：おにぎり">
+
+<label>繁體中文對照</label>
+<input id="expenseTranslation" placeholder="例如：飯糰">
+
+<label>金額（當地貨幣） *</label>
+<input id="expenseAmount" type="number" min="0.01" step="any">
+
+<label>消費分類</label>
+<select id="expenseCategory">
+<option>餐飲</option>
+<option>購物</option>
+<option>交通</option>
+<option>住宿</option>
+<option>景點活動</option>
+<option>文具</option>
+<option>藥妝</option>
+<option>伴手禮</option>
+<option>其他</option>
+<option value="custom">＋ 自訂分類</option>
+</select>
+<input id="customCategory" class="hidden" placeholder="輸入分類名稱">
+
+<label>付款方式</label>
+<select id="expensePayment">
+<option>現金</option>
+<option>信用卡</option>
+<option>行動支付</option>
+<option>其他</option>
+</select>
+
+<label>付款人</label>
+<input id="expensePayer" value="我">
+
+<label>分攤人數</label>
+<input id="expenseSplit" type="number" min="1" step="1" value="1">
+
+<button id="saveExpense" class="full" style="margin-top:16px">🐾 確認並儲存消費</button>
+<div id="expenseStatus" class="status"></div>
 </div>
 </section>
-<section id="report" class="page">
-<div class="card">
-<h2>📊 消費統計</h2>
-<div id="categoryList"></div>
 </div>
-<div class="card">
-<h2>📁 匯出旅行帳本</h2>
-<p>下載 Excel 可開啟的 CSV 明細。</p>
-<button class="full" onclick="exportCSV()">匯出 CSV 報表</button>
-</div>
-</section>
 </main>
-<nav>
-<button onclick="show('home')">🏠<div>首頁</div></button>
-<button onclick="show('records')">🧾<div>紀錄</div></button>
-<button onclick="show('add')">📸<div>記帳</div></button>
-<button onclick="show('split')">👫<div>拆帳</div></button>
-<button onclick="show('report')">📊<div>統計</div></button>
+
+<nav id="nav" class="nav hidden">
+<button id="navHome">🏠<div>我的旅行</div></button>
+<button id="navDetail">🧾<div>旅行帳本</div></button>
+<button id="navAdd">➕<div>新增消費</div></button>
 </nav>
-<script>
+
+<script type="module">
+import {createClient} from
+'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+const SUPABASE_URL =
+'https://cguccoroicdzipizttjd.supabase.co';
+
+const SUPABASE_KEY =
+'sb_publishable_8FKa2srogVb7liC9COZS6g_dGwgD3GU';
+
+const db=createClient(SUPABASE_URL,SUPABASE_KEY);
+
 const $=id=>document.getElementById(id);
-const yen=n=>"¥"+Number(n).toLocaleString("ja-JP");
-const nt=n=>"NT$"+Math.round(n).toLocaleString("zh-TW");
-let expenses=JSON.parse(localStorage.getItem("japan_expenses")||"[]");
-let settings=JSON.parse(localStorage.getItem("japan_settings")||'{"trip":"日本自由行","budget":100000,"rate":0.21}');
-function save(){
-localStorage.setItem("japan_expenses",JSON.stringify(expenses));
-render();
+
+const escapeHTML=s=>String(s??'').replace(
+/[&<>"']/g,c=>({
+'&':'&amp;',
+'<':'&lt;',
+'>':'&gt;',
+'"':'&quot;',
+"'":'&#39;'
+}[c])
+);
+
+const money=(n,c='')=>
+new Intl.NumberFormat('zh-TW',{
+maximumFractionDigits:2
+}).format(Number(n)||0)+' '+c;
+
+const twd=n=>'NT$'+money(n).trim();
+
+const today=()=>{
+const d=new Date();
+return [
+d.getFullYear(),
+String(d.getMonth()+1).padStart(2,'0'),
+String(d.getDate()).padStart(2,'0')
+].join('-');
+};
+
+const countryDefaults={
+日本:['JPY',0.21],
+韓國:['KRW',0.023],
+台灣:['TWD',1],
+泰國:['THB',0.95],
+美國:['USD',32]
+};
+
+let user=null;
+let trips=[];
+let current=null;
+let expenses=[];
+let editId=null;
+let countryFilter='全部';
+let receiptFile=null;
+
+function showPage(id){
+document.querySelectorAll('.page').forEach(el=>
+el.classList.toggle('active',el.id===id)
+);
+window.scrollTo(0,0);
 }
-function saveSettings(){
-settings={trip:$("trip").value,budget:Number($("budget").value),rate:Number($("rate").value)};
-localStorage.setItem("japan_settings",JSON.stringify(settings));
-render();alert("旅行設定已儲存！");
+
+function message(id,text){
+$(id).textContent=text||'';
 }
-function show(id){
-document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
-$(id).classList.add("active");
-render();window.scrollTo(0,0);
+
+function errorText(e){
+return e?.message||String(e||'未知錯誤');
 }
-function addExpense(){
-let amount=Number($("amount").value);
-let people=Number($("people").value);
-if(!amount||amount<=0||!Number.isInteger(people)||people<1){alert("請填寫有效金額與分攤人數");return;}
-expenses.push({
-id:Date.now(),date:$("date").value,
-shop:$("shop").value||"未命名店家",
-product:$("product").value||"未命名商品",
-amount,category:$("category").value,
-payment:$("payment").value,
-payer:$("payer").value||"我",people
+
+async function refreshAuth(){
+const {data,error}=await db.auth.getSession();
+
+if(error){
+message('authStatus',errorText(error));
+}
+
+user=data.session?.user||null;
+
+$('auth').classList.toggle('hidden',!!user);
+$('app').classList.toggle('hidden',!user);
+$('nav').classList.toggle('hidden',!user);
+
+$('accountLabel').textContent=user
+?'已登入 · 雲端記帳'
+:'登入後開始記帳';
+
+$('userEmail').textContent=user?.email||'';
+
+if(user){
+await loadTrips();
+}else{
+trips=[];
+current=null;
+showPage('home');
+}
+}
+
+$('signIn').onclick=async()=>{
+message('authStatus','登入中…');
+
+const {error}=await db.auth.signInWithPassword({
+email:$('email').value.trim(),
+password:$('password').value
 });
-save();
-["shop","product","amount"].forEach(id=>$(id).value="");
-show("records");
+
+message('authStatus',
+error?errorText(error):'登入成功');
+};
+
+$('signUp').onclick=async()=>{
+message('authStatus','註冊中…');
+
+const {data,error}=await db.auth.signUp({
+email:$('email').value.trim(),
+password:$('password').value,
+options:{
+emailRedirectTo:location.origin+location.pathname
 }
-function removeExpense(id){
-if(confirm("確定刪除這筆消費？")){
-expenses=expenses.filter(e=>e.id!==id);save();
-}}
-function render(){
-let total=expenses.reduce((s,e)=>s+e.amount,0);
-$("totalBudget").textContent=yen(settings.budget);
-$("spent").textContent=yen(total);
-$("remain").textContent=yen(settings.budget-total);
-$("twd").textContent=nt(total*settings.rate);
-$("progress").style.width=(settings.budget?Math.min(100,total/settings.budget*100):0)+"%";
-$("recordList").innerHTML=expenses.length?expenses.slice().reverse().map(e=>`
+});
+
+message('authStatus',
+error?errorText(error):
+data.session?'註冊成功':'請至信箱完成驗證');
+};
+
+$('signOut').onclick=async()=>{
+await db.auth.signOut();
+};
+
+db.auth.onAuthStateChange(()=>{
+setTimeout(refreshAuth,0);
+});
+
+async function loadTrips(){
+if(!user)return;
+
+const {data,error}=await db
+.from('wallet_trips')
+.select('*')
+.order('created_at',{ascending:false});
+
+if(error){
+alert('讀取旅行失敗：'+errorText(error));
+return;
+}
+
+trips=data||[];
+
+if(current){
+current=trips.find(t=>t.id===current.id)||null;
+}
+
+renderTrips();
+
+if(current){
+await openTrip(current.id,false);
+}
+}
+
+function tripStatus(t){
+if(t.start_date&&t.start_date>today()){
+return '即將出發';
+}
+if(t.end_date&&t.end_date<today()){
+return '歷史旅行';
+}
+return '進行中／未設定日期';
+}
+
+function renderTrips(){
+const countries=[
+'全部',
+...new Set(trips.map(t=>t.country))
+];
+
+$('countryFilters').innerHTML=countries.map(c=>`
+<button class="${c===countryFilter?'selected':'secondary'}"
+data-country="${escapeHTML(c)}">
+${escapeHTML(c)}
+</button>
+`).join('');
+
+document.querySelectorAll('[data-country]').forEach(b=>{
+b.onclick=()=>{
+countryFilter=b.dataset.country;
+renderTrips();
+};
+});
+
+const selectedYear=$('yearFilter').value||'全部';
+const years=[
+'全部',
+...new Set(trips.map(t=>
+t.start_date?.slice(0,4)
+).filter(Boolean))
+];
+
+$('yearFilter').innerHTML=years.map(y=>`
+<option ${selectedYear===y?'selected':''}>
+${escapeHTML(y)}
+</option>
+`).join('');
+
+const selectedMonth=$('monthFilter').value||'全部';
+
+$('monthFilter').innerHTML=[
+'全部',
+...Array.from({length:12},(_,i)=>
+String(i+1).padStart(2,'0')
+)
+].map(m=>`
+<option value="${m}"
+${selectedMonth===m?'selected':''}>
+${m==='全部'?'全部':m+' 月'}
+</option>
+`).join('');
+
+const filtered=trips.filter(t=>
+(countryFilter==='全部'||t.country===countryFilter)&&
+($('yearFilter').value==='全部'||
+t.start_date?.startsWith($('yearFilter').value))&&
+($('monthFilter').value==='全部'||
+t.start_date?.slice(5,7)===$('monthFilter').value)
+);
+
+$('tripList').innerHTML=filtered.length
+?filtered.map(t=>`
+<div class="trip">
+<div class="row">
+<strong>${escapeHTML(t.name)}</strong>
+<span class="tag">${tripStatus(t)}</span>
+</div>
+<p class="muted">
+🌏 ${escapeHTML(t.country)}
+${escapeHTML(t.regions||'')}
+</p>
+<p class="muted">
+${escapeHTML(t.start_date||'未設定')}
+～
+${escapeHTML(t.end_date||'未設定')}
+</p>
+<div class="row">
+<span>${money(t.budget_amount,t.currency_code)}</span>
+<button data-trip="${t.id}">查看帳本 ›</button>
+</div>
+</div>
+`).join('')
+:'<p class="muted">🐱 尚無符合條件的旅行</p>';
+
+document.querySelectorAll('[data-trip]').forEach(b=>{
+b.onclick=()=>openTrip(b.dataset.trip);
+});
+}
+
+$('yearFilter').onchange=renderTrips;
+$('monthFilter').onchange=renderTrips;
+
+function editTrip(t=null){
+editId=t?.id||null;
+
+$('tripEditTitle').textContent=t
+?'✏️ 編輯旅行':'🧳 新增旅行';
+
+$('tripName').value=t?.name||'';
+
+const country=t?.country||'日本';
+const known=!!countryDefaults[country];
+
+$('tripCountry').value=known?country:'custom';
+$('tripCustomCountry').value=known?'':country;
+$('tripCustomCountry').classList.toggle('hidden',known);
+
+$('tripRegions').value=t?.regions||'';
+$('tripStart').value=t?.start_date||'';
+$('tripEnd').value=t?.end_date||'';
+$('tripCurrency').value=t?.currency_code||'JPY';
+$('tripBudget').value=t?.budget_amount??0;
+$('tripRate').value=t?.exchange_rate_twd??0.21;
+
+message('tripStatus','');
+showPage('tripEdit');
+}
+
+$('newTrip').onclick=()=>editTrip();
+
+$('editTrip').onclick=()=>editTrip(current);
+
+$('cancelTrip').onclick=()=>{
+showPage(current?'detail':'home');
+};
+
+$('tripCountry').onchange=()=>{
+const country=$('tripCountry').value;
+
+$('tripCustomCountry').classList.toggle(
+'hidden',country!=='custom'
+);
+
+if(countryDefaults[country]){
+$('tripCurrency').value=countryDefaults[country][0];
+$('tripRate').value=countryDefaults[country][1];
+}
+};
+
+$('saveTrip').onclick=async()=>{
+const name=$('tripName').value.trim();
+
+const country=$('tripCountry').value==='custom'
+?$('tripCustomCountry').value.trim()
+:$('tripCountry').value;
+
+const currency=$('tripCurrency').value
+.trim().toUpperCase();
+
+const budget=Number($('tripBudget').value);
+const rate=Number($('tripRate').value);
+
+if(
+!name||!country||
+!/^[A-Z]{3}$/.test(currency)||
+!Number.isFinite(budget)||budget<0||
+!Number.isFinite(rate)||rate<=0
+){
+message('tripStatus','請檢查名稱、國家、貨幣、預算及匯率');
+return;
+}
+
+if(
+$('tripStart').value&&
+$('tripEnd').value&&
+$('tripEnd').value<$('tripStart').value
+){
+message('tripStatus','回程日期不能早於出發日期');
+return;
+}
+
+const payload={
+user_id:user.id,
+name,
+country,
+regions:$('tripRegions').value.trim(),
+currency_code:currency,
+start_date:$('tripStart').value||null,
+end_date:$('tripEnd').value||null,
+budget_amount:budget,
+exchange_rate_twd:rate
+};
+
+$('saveTrip').disabled=true;
+
+const result=editId
+?await db.from('wallet_trips')
+.update(payload)
+.eq('id',editId)
+.eq('user_id',user.id)
+.select().single()
+:await db.from('wallet_trips')
+.insert(payload)
+.select().single();
+
+$('saveTrip').disabled=false;
+
+if(result.error){
+message('tripStatus',errorText(result.error));
+return;
+}
+
+current=result.data;
+await loadTrips();
+showPage('detail');
+};
+
+async function openTrip(id,navigate=true){
+const trip=trips.find(t=>t.id===id);
+if(!trip)return;
+
+const {data,error}=await db
+.from('wallet_expenses')
+.select('*')
+.eq('trip_id',id)
+.order('spent_on',{ascending:false});
+
+if(error){
+alert('讀取消費失敗：'+errorText(error));
+return;
+}
+
+current=trip;
+expenses=data||[];
+renderDetail();
+
+if(navigate)showPage('detail');
+}
+
+function renderDetail(){
+if(!current)return;
+
+const t=current;
+
+const spent=expenses.reduce(
+(s,e)=>s+Number(e.amount),0
+);
+
+const spentTWD=expenses.reduce(
+(s,e)=>s+
+Number(e.amount)*Number(e.exchange_rate_twd),0
+);
+
+$('detailTitle').textContent='🌸 '+t.name;
+
+$('detailMeta').textContent=[
+t.country,t.regions,
+t.start_date,t.end_date
+].filter(Boolean).join(' · ');
+
+$('budgetShow').textContent=
+money(t.budget_amount,t.currency_code);
+
+$('spentShow').textContent=
+money(spent,t.currency_code);
+
+$('remainShow').textContent=
+money(Number(t.budget_amount)-spent,t.currency_code);
+
+$('twdShow').textContent=twd(spentTWD);
+
+$('budgetFill').style.width=
+(Number(t.budget_amount)>0
+?Math.min(100,spent/Number(t.budget_amount)*100)
+:0)+'%';
+
+$('expenseList').innerHTML=expenses.length
+?expenses.map(e=>`
 <div class="item">
-<div class="row"><b>${escapeHTML(e.shop)}</b><b>${yen(e.amount)}</b></div>
-<small>${escapeHTML(e.date)} · ${escapeHTML(e.product)} · ${escapeHTML(e.category)}</small>
-<div><button class="secondary" onclick="removeExpense(${e.id})">刪除</button></div>
-</div>`).join(""):"🐱 還沒有消費紀錄";
-$("splitList").innerHTML=expenses.length?expenses.map(e=>`
-<div class="item"><b>${escapeHTML(e.shop)}</b><br>
-付款人：${escapeHTML(e.payer)}<br>
-總額：${yen(e.amount)}<br>
-${e.people} 人平均，每人 ${yen(Math.round(e.amount/e.people))}
-</div>`).join(""):"尚無拆帳紀錄";
-let groups={};
-expenses.forEach(e=>groups[e.category]=(groups[e.category]||0)+e.amount);
-$("categoryList").innerHTML=Object.entries(groups).map(([k,v])=>`
-<div class="item row"><span>${escapeHTML(k)}</span><b>${yen(v)}</b></div>`).join("")||"尚無統計資料";
+<div class="row">
+<strong>${escapeHTML(e.shop||e.item_name||'消費')}</strong>
+<strong>${money(e.amount,e.currency_code)}</strong>
+</div>
+<p class="muted">
+${escapeHTML(e.spent_on)}
+· ${escapeHTML(e.category)}
+</p>
+<p>
+${escapeHTML(e.item_name||'')}
+${e.item_translation
+?'（'+escapeHTML(e.item_translation)+'）':''}
+</p>
+<p class="muted">
+${twd(Number(e.amount)*Number(e.exchange_rate_twd))}
+· ${escapeHTML(e.payment)}
+· ${escapeHTML(e.payer)}
+· ${e.split_count} 人分攤
+</p>
+<div class="row">
+${e.receipt_path
+?`<button class="secondary" data-photo="${e.id}">
+查看收據
+</button>`:'<span></span>'}
+<button class="danger" data-delete="${e.id}">
+刪除
+</button>
+</div>
+</div>
+`).join('')
+:'<p class="muted">尚無消費紀錄</p>';
+
+document.querySelectorAll('[data-delete]').forEach(b=>{
+b.onclick=()=>deleteExpense(b.dataset.delete);
+});
+
+document.querySelectorAll('[data-photo]').forEach(b=>{
+b.onclick=()=>viewReceipt(b.dataset.photo);
+});
+
+const groups={};
+
+expenses.forEach(e=>{
+groups[e.category]=
+(groups[e.category]||0)+Number(e.amount);
+});
+
+$('categoryStats').innerHTML=
+Object.entries(groups).map(([name,amount])=>`
+<div class="item row">
+<span>${escapeHTML(name)}</span>
+<strong>${money(amount,t.currency_code)}</strong>
+</div>
+`).join('')||
+'<p class="muted">尚無分類統計</p>';
 }
-function escapeHTML(s){
-return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+$('backTrips').onclick=()=>showPage('home');
+$('navHome').onclick=()=>showPage('home');
+$('navDetail').onclick=()=>
+showPage(current?'detail':'home');
+
+$('navAdd').onclick=()=>{
+if(current)openAdd();
+else alert('請先選擇旅行');
+};
+
+$('goAdd').onclick=openAdd;
+$('cancelExpense').onclick=()=>showPage('detail');
+
+function openAdd(){
+if(!current)return;
+
+$('addTripLabel').textContent=
+current.name+' · '+current.currency_code;
+
+$('expenseDate').value=today();
+
+[
+'expenseShop',
+'expenseItem',
+'expenseTranslation',
+'expenseAmount'
+].forEach(id=>$(id).value='');
+
+$('expenseCategory').value='餐飲';
+$('expensePayment').value='現金';
+$('expensePayer').value='我';
+$('expenseSplit').value=1;
+$('receiptPhoto').value='';
+$('customCategory').value='';
+$('customCategory').classList.add('hidden');
+
+receiptFile=null;
+clearOCR();
+message('expenseStatus','');
+
+showPage('add');
 }
-function exportCSV(){
-let rows=[["日期","店家","商品","分類","日幣","台幣","付款方式","付款人","分攤人數"]];
-expenses.forEach(e=>rows.push([e.date,e.shop,e.product,e.category,e.amount,(e.amount*settings.rate).toFixed(2),e.payment,e.payer,e.people]));
-let csv="\uFEFF"+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\r\n");
-let a=document.createElement("a");
-a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
-a.download="日本旅行記帳.csv";a.click();
-setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+
+$('expenseCategory').onchange=()=>{
+$('customCategory').classList.toggle(
+'hidden',
+$('expenseCategory').value!=='custom'
+);
+};
+
+/* 免費 OCR 與基本詞彙翻譯 */
+
+const dictionary={
+'おにぎり':'飯糰',
+'お茶':'茶',
+'緑茶':'綠茶',
+'水':'水',
+'パン':'麵包',
+'牛乳':'牛奶',
+'チョコレート':'巧克力',
+'コーヒー':'咖啡',
+'弁当':'便當',
+'お弁当':'便當',
+'サンドイッチ':'三明治',
+'税込':'含稅',
+'合計':'合計',
+'小計':'小計',
+'現金':'現金',
+'영수증':'收據',
+'합계':'合計',
+'총액':'總額',
+'커피':'咖啡',
+'우유':'牛奶',
+'물':'水',
+'빵':'麵包',
+'김밥':'韓式飯捲',
+'라면':'泡麵',
+'초콜릿':'巧克力',
+'할인':'折扣',
+'금액':'金額',
+'아이스크림':'冰淇淋',
+'coffee':'咖啡',
+'water':'水',
+'milk':'牛奶',
+'bread':'麵包',
+'chocolate':'巧克力'
+};
+
+function basicTranslate(text){
+const lower=text.toLowerCase();
+
+for(const [original,chinese] of Object.entries(dictionary)){
+if(lower.includes(original.toLowerCase())){
+return chinese;
 }
-$("date").value=new Date().toLocaleDateString("en-CA");
-$("trip").value=settings.trip;
-$("budget").value=settings.budget;
-$("rate").value=settings.rate;
-render();
+}
+return '';
+}
+
+function clearOCR(){
+$('ocrResult').classList.add('hidden');
+$('receiptPreview').classList.add('hidden');
+$('ocrText').textContent='';
+message('ocrStatus','');
+}
+
+$('clearOCR').onclick=clearOCR;
+
+$('receiptPhoto').onchange=()=>{
+receiptFile=$('receiptPhoto').files[0]||null;
+clearOCR();
+};
+
+let ocrModule=null;
+
+async function getOCR(){
+if(!ocrModule){
+ocrModule=await import(
+'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.esm.min.js'
+);
+}
+return ocrModule;
+}
+
+function detectDate(text){
+const m=text.match(
+/(20\d{2})[\/.\-年]\s*(\d{1,2})[\/.\-月]\s*(\d{1,2})/
+);
+
+if(!m)return null;
+
+const y=m[1];
+const month=m[2].padStart(2,'0');
+const day=m[3].padStart(2,'0');
+const result=`${y}-${month}-${day}`;
+
+const d=new Date(result+'T12:00:00');
+
+if(
+Number.isNaN(d.getTime())||
+d.getFullYear()!==Number(y)||
+d.getMonth()+1!==Number(month)||
+d.getDate()!==Number(day)
+)return null;
+
+return result;
+}
+
+function detectTotal(text){
+const lines=text.split(/\n/);
+
+const keywords=[
+/(?:合計|総合計|お買上計|請求額|総額|총액|합계|total|amount due)/i
+];
+
+for(const line of lines.slice().reverse()){
+if(!keywords.some(k=>k.test(line)))continue;
+
+const nums=[
+...line.matchAll(
+/(?:¥|￥|₩|\$)?\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)/g
+)
+].map(m=>Number(m[1].replace(/,/g,'')))
+.filter(n=>n>0);
+
+if(nums.length){
+return nums[nums.length-1];
+}
+}
+
+return null;
+}
+
+function detectItem(text){
+const lines=text.split(/\n/)
+.map(s=>s.trim())
+.filter(Boolean);
+
+const skip=
+/合計|小計|税込|消費税|total|subtotal|receipt|領収|領收|영수증|합계|총액|tax|電話|tel|カード|cash/i;
+
+return lines.find(line=>
+line.length>=3&&
+!skip.test(line)&&
+/[ぁ-んァ-ヶ一-龯가-힣A-Za-z]/.test(line)
+)||'';
+}
+
+$('runOCR').onclick=async()=>{
+const file=$('receiptPhoto').files[0];
+
+if(!file){
+message('ocrStatus','請先拍照或選擇收據照片');
+return;
+}
+
+if(!file.type.startsWith('image/')){
+message('ocrStatus','請選擇圖片檔案');
+return;
+}
+
+$('runOCR').disabled=true;
+message('ocrStatus','正在載入免費文字辨識工具…');
+
+let worker=null;
+
+try{
+const Tesseract=await getOCR();
+
+message('ocrStatus','正在載入日文、韓文及英文辨識資料…');
+
+worker=await Tesseract.createWorker(
+'jpn+kor+eng',
+1,
+{
+logger:m=>{
+if(m.status==='recognizing text'){
+message(
+'ocrStatus',
+'辨識中 '+Math.round((m.progress||0)*100)+'%'
+);
+}
+}
+}
+);
+
+const result=await worker.recognize(file);
+const text=result.data.text||'';
+
+$('ocrText').textContent=text||'沒有辨識到文字';
+$('ocrResult').classList.remove('hidden');
+
+const objectURL=URL.createObjectURL(file);
+$('receiptPreview').src=objectURL;
+$('receiptPreview').classList.remove('hidden');
+$('receiptPreview').onload=()=>URL.revokeObjectURL(objectURL);
+
+const date=detectDate(text);
+if(date)$('expenseDate').value=date;
+
+const amount=detectTotal(text);
+if(amount)$('expenseAmount').value=amount;
+
+const item=detectItem(text);
+
+if(item){
+$('expenseItem').value=item;
+$('expenseTranslation').value=basicTranslate(item);
+}
+
+message(
+'ocrStatus',
+'辨識完成！請核對商品、日期及總金額後再儲存。'
+);
+
+}catch(e){
+message(
+'ocrStatus',
+'辨識失敗：'+errorText(e)+
+'。可改用手動輸入。'
+);
+}finally{
+if(worker){
+try{await worker.terminate();}catch{}
+}
+$('runOCR').disabled=false;
+}
+};
+
+/* 儲存消費與收據 */
+
+$('saveExpense').onclick=async()=>{
+if(!user||!current)return;
+
+const amount=Number($('expenseAmount').value);
+const split=Number($('expenseSplit').value);
+
+const category=$('expenseCategory').value==='custom'
+?$('customCategory').value.trim()
+:$('expenseCategory').value;
+
+if(
+!Number.isFinite(amount)||amount<=0||
+!Number.isInteger(split)||split<1||
+!category
+){
+message(
+'expenseStatus',
+'請確認金額、分類及分攤人數'
+);
+return;
+}
+
+const payload={
+user_id:user.id,
+trip_id:current.id,
+spent_on:$('expenseDate').value||today(),
+shop:$('expenseShop').value.trim(),
+item_name:$('expenseItem').value.trim(),
+item_translation:$('expenseTranslation').value.trim(),
+category,
+amount,
+currency_code:current.currency_code,
+exchange_rate_twd:current.exchange_rate_twd,
+payment:$('expensePayment').value,
+payer:$('expensePayer').value.trim()||'我',
+split_count:split
+};
+
+$('saveExpense').disabled=true;
+message('expenseStatus','儲存中…');
+
+let uploadedPath=null;
+
+const file=$('receiptPhoto').files[0];
+
+if(file){
+if(file.size>5*1024*1024){
+message('expenseStatus','收據照片請小於 5MB');
+$('saveExpense').disabled=false;
+return;
+}
+
+const extension=file.name.split('.').pop()
+.replace(/[^a-z0-9]/gi,'')
+.toLowerCase()||'jpg';
+
+uploadedPath=[
+user.id,
+current.id,
+crypto.randomUUID()+'.'+extension
+].join('/');
+
+const {error}=await db.storage
+.from('receipts')
+.upload(uploadedPath,file,{
+contentType:file.type,
+upsert:false
+});
+
+if(error){
+message(
+'expenseStatus',
+'收據上傳失敗：'+errorText(error)
+);
+$('saveExpense').disabled=false;
+return;
+}
+
+payload.receipt_path=uploadedPath;
+}
+
+const {error}=await db
+.from('wallet_expenses')
+.insert(payload);
+
+if(error){
+if(uploadedPath){
+await db.storage.from('receipts')
+.remove([uploadedPath]);
+}
+
+message('expenseStatus',errorText(error));
+$('saveExpense').disabled=false;
+return;
+}
+
+$('saveExpense').disabled=false;
+await openTrip(current.id);
+};
+
+async function viewReceipt(id){
+const e=expenses.find(x=>x.id===id);
+if(!e?.receipt_path)return;
+
+const {data,error}=await db.storage
+.from('receipts')
+.createSignedUrl(e.receipt_path,60);
+
+if(error){
+alert('無法開啟收據：'+errorText(error));
+return;
+}
+
+window.open(data.signedUrl,'_blank','noopener');
+}
+
+async function deleteExpense(id){
+const e=expenses.find(x=>x.id===id);
+
+if(!e||!confirm('確定刪除這筆消費嗎？'))return;
+
+const {error}=await db
+.from('wallet_expenses')
+.delete()
+.eq('id',id)
+.eq('user_id',user.id);
+
+if(error){
+alert(errorText(error));
+return;
+}
+
+if(e.receipt_path){
+await db.storage.from('receipts')
+.remove([e.receipt_path]);
+}
+
+await openTrip(current.id);
+}
+
+/* CSV 與舊版資料備份 */
+
+function downloadFile(name,content,type){
+const blob=new Blob([content],{type});
+const url=URL.createObjectURL(blob);
+const a=document.createElement('a');
+
+a.href=url;
+a.download=name;
+document.body.appendChild(a);
+a.click();
+a.remove();
+
+setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+
+$('exportTrip').onclick=()=>{
+if(!current)return;
+
+const rows=[[
+'日期','國家','城市','旅行',
+'店家','商品原文','中文翻譯','分類',
+'原幣金額','幣別','匯率',
+'換算台幣','付款方式','付款人','分攤人數'
+]];
+
+expenses.forEach(e=>{
+rows.push([
+e.spent_on,
+current.country,
+current.regions,
+current.name,
+e.shop,
+e.item_name,
+e.item_translation,
+e.category,
+e.amount,
+e.currency_code,
+e.exchange_rate_twd,
+(
+Number(e.amount)*Number(e.exchange_rate_twd)
+).toFixed(2),
+e.payment,
+e.payer,
+e.split_count
+]);
+});
+
+const csv='\ufeff'+rows.map(row=>
+row.map(v=>
+'"'+String(v??'').replace(/"/g,'""')+'"'
+).join(',')
+).join('\r\n');
+
+const filename=current.name
+.replace(/[\\/:*?"<>|]/g,'_');
+
+downloadFile(
+'旅途記帳_'+filename+'.csv',
+csv,
+'text/csv;charset=utf-8'
+);
+};
+
+$('legacyExport').onclick=()=>{
+const old={
+exported_at:new Date().toISOString(),
+japan_expenses:localStorage.getItem('japan_expenses'),
+japan_settings:localStorage.getItem('japan_settings')
+};
+
+if(!old.japan_expenses&&!old.japan_settings){
+alert('沒有找到這個瀏覽器的舊版資料');
+return;
+}
+
+downloadFile(
+'旅日記帳_舊版備份.json',
+JSON.stringify(old,null,2),
+'application/json'
+);
+};
+
+try{
+const old=JSON.parse(
+localStorage.getItem('japan_expenses')||'[]'
+);
+
+$('legacyCount').textContent=
+'找到 '+old.length+' 筆舊版消費紀錄';
+}catch{
+$('legacyCount').textContent=
+'舊版資料無法直接計數，仍可嘗試匯出';
+}
+
+refreshAuth();
 </script>
 </body>
 </html>
