@@ -69,12 +69,42 @@ img.preview{max-width:100%;max-height:300px;border-radius:10px}
 <input id="password" type="password" autocomplete="current-password">
 <div class="flex" style="margin-top:12px">
 <button id="signIn">登入</button>
-<button id="signUp" class="secondary">註冊</button>
+<button id="signUp" class="secondary" style="display:none">註冊</button>
 </div>
-<p class="muted">註冊後可能需要先至信箱完成驗證。</p>
+<p class="muted">🔒 Travel Wallet 採邀請制，僅限受邀親友登入。</p>
 <div id="authStatus" class="status"></div>
 </section>
+<section id="inviteSetup" class="card hidden">
+  <h2>🔐 設定 Travel Wallet 密碼</h2>
+  <p class="muted">
+    歡迎加入 Travel Wallet！
+    請先設定密碼，再開始使用旅行記帳。
+  </p>
 
+  <label>新密碼</label>
+  <input
+    id="invitePassword"
+    type="password"
+    autocomplete="new-password"
+    minlength="8"
+    placeholder="至少 8 個字元"
+  >
+
+  <label>再次輸入密碼</label>
+  <input
+    id="invitePasswordConfirm"
+    type="password"
+    autocomplete="new-password"
+    minlength="8"
+    placeholder="再次輸入新密碼"
+  >
+
+  <button id="saveInvitePassword" class="full">
+    儲存密碼並開始使用
+  </button>
+
+  <div id="inviteStatus" class="status"></div>
+</section>
 <div id="app" class="hidden">
 <div class="row" style="margin-bottom:12px">
 <small id="userEmail"></small>
@@ -291,7 +321,12 @@ const SUPABASE_URL =
 
 const SUPABASE_KEY =
 'sb_publishable_8FKa2srogVb7liC9COZS6g_dGwgD3GU';
+const initialHash = new URLSearchParams(location.hash.slice(1));
 
+if(initialHash.get('type') === 'invite'){
+  sessionStorage.setItem('travelWalletInvitePending','1');
+}
+  
 const db=createClient(SUPABASE_URL,SUPABASE_KEY);
 
 const $=id=>document.getElementById(id);
@@ -362,17 +397,33 @@ message('authStatus',errorText(error));
 
 user=data.session?.user||null;
 
-$('auth').classList.toggle('hidden',!!user);
-$('app').classList.toggle('hidden',!user);
-$('nav').classList.toggle('hidden',!user);
+const hashParams = new URLSearchParams(
+  location.hash.replace(/^#/, '')
+);
 
+const invitePending =
+  !!user &&
+  (
+    hashParams.get('type') === 'invite' ||
+    sessionStorage.getItem('travelWalletInvitePending') === '1'
+  );
+  
+if(invitePending){
+  sessionStorage.setItem('travelWalletInvitePending','1');
+}
+
+$('auth').classList.toggle('hidden',!!user);
+$('inviteSetup').classList.toggle('hidden',!invitePending);
+$('app').classList.toggle('hidden',!user || invitePending);
+$('nav').classList.toggle('hidden',!user || invitePending);
+  
 $('accountLabel').textContent=user
 ?'已登入 · 雲端記帳'
 :'登入後開始記帳';
 
 $('userEmail').textContent=user?.email||'';
 
-if(user){
+if(user && !invitePending){
 await loadTrips();
 }else{
 trips=[];
@@ -412,9 +463,48 @@ data.session?'註冊成功':'請至信箱完成驗證');
 $('signOut').onclick=async()=>{
 await db.auth.signOut();
 };
+$('saveInvitePassword').onclick=async()=>{
+  const password=$('invitePassword').value;
+  const confirm=$('invitePasswordConfirm').value;
 
-db.auth.onAuthStateChange(()=>{
-setTimeout(refreshAuth,0);
+  if(password.length<8){
+    message('inviteStatus','密碼至少需要 8 個字元');
+    return;
+  }
+
+  if(password!==confirm){
+    message('inviteStatus','兩次輸入的密碼不一致');
+    return;
+  }
+
+  message('inviteStatus','正在儲存密碼…');
+
+  const {error}=await db.auth.updateUser({
+    password:password
+  });
+
+  if(error){
+    message('inviteStatus',errorText(error));
+    return;
+  }
+
+  $('invitePassword').value='';
+  $('invitePasswordConfirm').value='';
+
+message('inviteStatus','密碼設定成功！');
+
+sessionStorage.removeItem('travelWalletInvitePending');
+history.replaceState(null,'',location.pathname);
+await refreshAuth();
+};
+
+db.auth.onAuthStateChange((event)=>{
+  if(event === 'SIGNED_IN' &&
+     new URLSearchParams(location.hash.slice(1)).get('type') === 'invite'){
+    sessionStorage.setItem('travelWalletInvitePending','1');
+  }
+
+  setTimeout(refreshAuth,0);
 });
 
 async function loadTrips(){
@@ -431,7 +521,7 @@ return;
 }
 
 trips=data||[];
-
+  
 if(current){
 current=trips.find(t=>t.id===current.id)||null;
 }
