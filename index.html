@@ -69,6 +69,9 @@ img.preview{max-width:100%;max-height:300px;border-radius:10px}
 <input id="password" type="password" autocomplete="current-password">
 <div class="flex" style="margin-top:12px">
 <button id="signIn">登入</button>
+<button id="forgotPassword" class="secondary" type="button">
+  🔑 忘記密碼
+  </button>
 <button id="signUp" class="secondary" style="display:none">註冊</button>
 </div>
 <p class="muted">🔒 Travel Wallet 採邀請制，僅限受邀親友登入。</p>
@@ -108,6 +111,41 @@ img.preview{max-width:100%;max-height:300px;border-radius:10px}
 
   <div id="inviteStatus" class="status"></div>
 </section>
+  
+<section id="resetPasswordSetup" class="card hidden">
+  <h2>🔑 重新設定密碼</h2>
+  <p class="muted">
+    請輸入新密碼，完成後即可使用旅行記帳。
+  </p>
+
+  <label>新密碼</label>
+  <p class="muted">
+    密碼至少 8 個字元，須包含英文大寫、小寫、數字及特殊符號（例如 !、@、#）。
+  </p>
+  <input
+    id="resetPassword"
+    type="password"
+    autocomplete="new-password"
+    minlength="8"
+    placeholder="請輸入新密碼"
+  >
+
+  <label>再次輸入密碼</label>
+  <input
+    id="resetPasswordConfirm"
+    type="password"
+    autocomplete="new-password"
+    minlength="8"
+    placeholder="再次輸入新密碼"
+  >
+
+  <button id="saveResetPassword" class="full">
+    儲存新密碼
+  </button>
+
+  <div id="resetPasswordStatus" class="status"></div>
+</section>
+  
 <div id="app" class="hidden">
 <div class="row" style="margin-bottom:12px">
 <small id="userEmail"></small>
@@ -329,6 +367,13 @@ const initialHash = new URLSearchParams(location.hash.slice(1));
 if(initialHash.get('type') === 'invite'){
   sessionStorage.setItem('travelWalletInvitePending','1');
 }
+const initialResetHash =
+  new URLSearchParams(location.hash.slice(1));
+
+if(initialResetHash.get('type') === 'recovery'){
+  sessionStorage.setItem('travelWalletResetPending','1');
+  sessionStorage.removeItem('travelWalletInvitePending');
+}
   
 const db=createClient(SUPABASE_URL,SUPABASE_KEY);
 
@@ -433,10 +478,24 @@ if(invitePending){
   sessionStorage.setItem('travelWalletInvitePending','1');
 }
 
-$('auth').classList.toggle('hidden',!!user);
-$('inviteSetup').classList.toggle('hidden',!invitePending);
-$('app').classList.toggle('hidden',!user || invitePending);
-$('nav').classList.toggle('hidden',!user || invitePending);
+
+const resetPending =
+  sessionStorage.getItem('travelWalletResetPending') === '1';
+
+
+$('auth').classList.toggle('hidden',!!user || resetPending);
+$('inviteSetup').classList.toggle('hidden', !invitePending);
+$('resetPasswordSetup').classList.toggle('hidden', !resetPending);
+
+$('app').classList.toggle(
+  'hidden',
+  !user || invitePending || resetPending
+);
+
+$('nav').classList.toggle(
+  'hidden',
+  !user || invitePending || resetPending
+);
   
 $('accountLabel').textContent=user
 ?'已登入 · 雲端記帳'
@@ -444,7 +503,8 @@ $('accountLabel').textContent=user
 
 $('userEmail').textContent=user?.email||'';
 
-if(user && !invitePending){
+
+if(user && !invitePending && !resetPending){
 await loadTrips();
 }else{
 trips=[];
@@ -464,7 +524,26 @@ password:$('password').value
 message('authStatus',
 error?errorText(error):'登入成功');
 };
+$('forgotPassword').onclick=async()=>{
+  const email=$('email').value.trim();
 
+  if(!email){
+    message('authStatus','請先輸入 Email，再點擊忘記密碼。');
+    return;
+  }
+
+  message('authStatus','正在寄送密碼重設信…');
+
+  const {error}=await db.auth.resetPasswordForEmail(email,{
+    redirectTo:location.origin+location.pathname
+  });
+
+  message('authStatus',
+    error
+      ? errorText(error)
+      : '如果此 Email 已註冊，系統將寄送密碼重設信，請檢查信箱。'
+  );
+};
 $('signUp').onclick=async()=>{
 message('authStatus','註冊中…');
 
@@ -518,15 +597,60 @@ sessionStorage.removeItem('travelWalletInvitePending');
 history.replaceState(null,'',location.pathname);
 await refreshAuth();
 };
+$('saveResetPassword').onclick=async()=>{
+  const password=$('resetPassword').value;
+  const confirm=$('resetPasswordConfirm').value;
 
+  if(password.length<8){
+    message('resetPasswordStatus','密碼至少需要 8 個字元');
+    return;
+  }
+
+  if(password!==confirm){
+    message('resetPasswordStatus','兩次輸入的密碼不一致');
+    return;
+  }
+
+  message('resetPasswordStatus','正在儲存新密碼...');
+
+  const {error}=await db.auth.updateUser({
+    password:password
+  });
+
+  if(error){
+    message('resetPasswordStatus',errorText(error));
+    return;
+  }
+
+  $('resetPassword').value='';
+  $('resetPasswordConfirm').value='';
+
+  sessionStorage.removeItem('travelWalletResetPending');
+  history.replaceState(null,'',location.pathname);
+
+  message('resetPasswordStatus','密碼重設成功！');
+
+ await refreshAuth();
+};
+  
 db.auth.onAuthStateChange((event)=>{
-  if(event === 'SIGNED_IN' &&
-     new URLSearchParams(location.hash.slice(1)).get('type') === 'invite'){
+  const type = new URLSearchParams(
+    location.hash.slice(1)
+  ).get('type');
+
+  if(event === 'PASSWORD_RECOVERY' || type === 'recovery'){
+    sessionStorage.setItem('travelWalletResetPending','1');
+    sessionStorage.removeItem('travelWalletInvitePending');
+  }
+
+  if(event === 'SIGNED_IN' && type === 'invite'){
     sessionStorage.setItem('travelWalletInvitePending','1');
   }
 
   setTimeout(refreshAuth,0);
 });
+
+await refreshAuth();
 
 async function loadTrips(){
 if(!user)return;
