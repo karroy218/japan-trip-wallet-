@@ -432,27 +432,33 @@ function message(id,text){
 $(id).textContent=text||'';
 }
 
+
 function errorText(e){
   const msg=e?.message||String(e||'未知錯誤');
 
-  if(/Password should contain at least one character/i.test(msg)){
-    return '密碼需包含英文大寫、小寫、數字及特殊符號（例如 !、@、#）。';
+  const translations=[
+    [/Invalid login credentials/i,'Email 或密碼不正確，請重新確認後再試。'],
+    [/Email not confirmed/i,'Email 尚未完成驗證，請先查看驗證信。'],
+    [/User already registered/i,'此 Email 已經註冊，請直接登入。'],
+    [/Password should contain at least one character/i,'密碼須包含英文大寫、小寫、數字及特殊符號。'],
+    [/Password is too short|at least 8 characters/i,'密碼長度不足，請至少輸入 8 個字元。'],
+    [/New password should be different/i,'新密碼不可與原本密碼相同。'],
+    [/Auth session missing|session_not_found/i,'登入驗證已失效，請重新開啟邀請或重設密碼連結。'],
+    [/Email rate limit exceeded|rate limit/i,'操作過於頻繁，請稍後再試。'],
+    [/Email address.*invalid|invalid email/i,'Email 格式不正確，請重新輸入。'],
+    [/Token has expired|otp_expired|Email link is invalid or has expired/i,'驗證連結已過期或失效，請重新申請。'],
+    [/Failed to fetch|NetworkError|network request failed/i,'網路連線失敗，請檢查網路後重試。']
+  ];
+
+  for(const [pattern,chinese] of translations){
+    if(pattern.test(msg)){
+      return chinese+'\n'+msg;
+    }
   }
 
-  if(/Password is too short|at least 8 characters/i.test(msg)){
-    return '密碼長度不足，請至少輸入 8 個字元。';
-  }
-
-  if(/New password should be different/i.test(msg)){
-    return '新密碼不可與原本密碼相同。';
-  }
-
-  if(/Auth session missing/i.test(msg)){
-    return '登入驗證已失效，請重新開啟邀請連結。';
-  }
-
-  return msg;
+  return '操作失敗，請稍後再試。\n'+msg;
 }
+  
   
 async function refreshAuth(){
 const {data,error}=await db.auth.getSession();
