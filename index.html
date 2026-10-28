@@ -429,9 +429,32 @@ window.scrollTo(0,0);
 }
 
 function message(id,text){
-$(id).textContent=text||'';
-}
+  const el=$(id);
+  el.replaceChildren();
 
+  const content=String(text||'');
+  if(!content)return;
+
+  const parts=content.split('\n');
+  const isError=parts.length>1;
+
+  if(isError){
+    const zh=document.createElement('div');
+    zh.textContent=parts[0];
+    zh.style.color='#a45a53';
+    el.appendChild(zh);
+
+    const en=document.createElement('div');
+    en.textContent=parts.slice(1).join('\n');
+    en.style.fontSize='12px';
+    en.style.color='#888888';
+    en.style.marginTop='5px';
+    en.style.overflowWrap='anywhere';
+    el.appendChild(en);
+  }else{
+    el.textContent=content;
+  }
+}
 
 function errorText(e){
   const msg=e?.message||String(e||'未知錯誤');
