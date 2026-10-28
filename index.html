@@ -1547,5 +1547,56 @@ $('legacyCount').textContent=
 
 refreshAuth();
 </script>
+  
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const passwordIds = [
+    'password',
+    'invitePassword',
+    'invitePasswordConfirm',
+    'resetPassword',
+    'resetPasswordConfirm'
+  ];
+
+  passwordIds.forEach(function (id) {
+    const input = document.getElementById(id);
+    if (!input || input.dataset.eyeAdded === '1') return;
+
+    input.dataset.eyeAdded = '1';
+
+    const wrapper = document.createElement('div');
+    wrapper.style.display = 'flex';
+    wrapper.style.alignItems = 'center';
+    wrapper.style.gap = '8px';
+
+    input.parentNode.insertBefore(wrapper, input);
+    wrapper.appendChild(input);
+
+    input.style.flex = '1';
+    input.style.minWidth = '0';
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'secondary';
+    button.textContent = '👁️';
+    button.setAttribute('aria-label', '顯示密碼');
+    button.style.width = 'auto';
+    button.style.flexShrink = '0';
+
+    button.addEventListener('click', function () {
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      button.textContent = show ? '🙈' : '👁️';
+      button.setAttribute(
+        'aria-label',
+        show ? '隱藏密碼' : '顯示密碼'
+      );
+    });
+
+    wrapper.appendChild(button);
+  });
+});
+</script>
+
 </body>
 </html>
