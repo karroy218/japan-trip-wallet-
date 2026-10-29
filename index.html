@@ -1233,20 +1233,20 @@ function detectTotal(text) {
   for (const raw of lines) {
     const line = clean(raw);
     const nums = amounts(line);
-    if (nums.length !== 1) continue;
+    if (nums.length === 0) continue;
 
     if (
       /小計|税抜|税抜き|課税対象|sub\s*total/i.test(line) &&
       !/税率|tax\s*rate/i.test(line)
     ) {
-      subtotal = nums[0];
+      subtotal = nums[nums.length - 1];
     }
 
     if (
       /消費税等|消費税|内税|外税|tax\s*amount/i.test(line) &&
       !/税率|課税対象/i.test(line)
     ) {
-      tax = nums[0];
+      tax = nums[nums.length - 1];
     }
   }
 
