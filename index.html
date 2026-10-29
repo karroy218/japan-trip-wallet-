@@ -1189,13 +1189,14 @@ return result;
 
 
 
+
 function detectTotal(text) {
   const lines = text.split(/\r?\n/)
     .map(line => line.trim())
     .filter(Boolean);
 
   const clean = line => line
-    .replace(/([一-龥ぁ-ヶー])\s+(?=[一-龥ぁ-ヶー])/g, '$1')
+    .replace(/([一-龥ぁ-ヶ])\s+(?=[一-龥ぁ-ヶ])/g, '$1')
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -1203,6 +1204,7 @@ function detectTotal(text) {
     const matches = [...line.matchAll(
       /(?:[¥￥\\]|JPY)?\s*(\d{1,3}(?:,\d{3})+|\d+)(?![\d.,])/g
     )];
+
     return matches
       .map(m => Number(m[1].replace(/,/g, '')))
       .filter(n => Number.isFinite(n) && n > 0);
@@ -1212,9 +1214,9 @@ function detectTotal(text) {
     /値引|割引|クーポン|ポイント|残高|お釣|釣銭|商品代金|税率|伝票番号|nanaco番号|subtotal|discount|change|balance/i;
 
   const payment =
-    /お支払(?:い)?(?:金額)?|お買上(?:げ)?(?:合計|金額)?|ご請求額|請求金額|領収金額|総合計|合計金額|支払合計|現金支払|合計|grand\s*total|amount\s*due/i;
+    /お支払|お買上|ご請求額|請求金額|領収金額|総合計|合計金額|支払合計|現金支払|grand\s*total|amount\s*due/i;
 
-  // 優先尋找明確的付款總額
+  // 1. 優先辨識明確的付款總額
   for (const raw of lines) {
     const line = clean(raw);
     if (excluded.test(line) || !payment.test(line)) continue;
@@ -1224,6 +1226,50 @@ function detectTotal(text) {
       return { amount: nums[0], estimated: false };
     }
   }
+
+  // 2. 找出小計及消費稅
+  let subtotal = null;
+  let tax = null;
+
+  for (const raw of lines) {
+    const line = clean(raw);
+    const nums = amounts(line);
+    if (!nums.length) continue;
+
+    if (
+      /小計|税抜|税抜き|課税対象|sub\s*total/i.test(line) &&
+      !/税率|tax\s*rate/i.test(line)
+    ) {
+      subtotal = nums[nums.length - 1];
+    }
+
+    if (
+      /消費税等|消費税|内税|外税|tax\s*amount/i.test(line) &&
+      !/税率|課税対象/i.test(line)
+    ) {
+      tax = nums[nums.length - 1];
+    }
+  }
+
+  // 3. 小計 + 稅額，必須能在收據找到相同總額
+  if (subtotal !== null && tax !== null) {
+    const calculated = subtotal + tax;
+
+    const matchingLines = lines.filter(raw => {
+      const line = clean(raw);
+      if (excluded.test(line)) return false;
+      return amounts(line).includes(calculated);
+    });
+
+    if (matchingLines.length > 0) {
+      return { amount: calculated, estimated: true };
+    }
+  }
+
+  // 4. 找不到可靠總額時，留空讓使用者確認
+  return { amount: null, estimated: false };
+}
+
 
   // OCR 可能將付款標籤辨識錯誤，
   // 因此再尋找稅前小計及消費稅
