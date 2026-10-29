@@ -1188,41 +1188,50 @@ return result;
 }
 
 
+
 function detectTotal(text) {
   const lines = text.split(/\r?\n/)
     .map(line => line.trim())
     .filter(Boolean);
 
-  const exclude =
-    /値\s*引|割引|クーポン|ポイント|税抜|消費税|内税|外税|税率|お釣|釣銭|預り|お預り|残高|商品代金|値引合計|discount|subtotal|tax|change|balance|할인|세금/i;
+  // 移除日文漢字之間的空格，避免 OCR 拆字
+  function normalize(line) {
+    return line
+      .replace(/([一-龯])\s+(?=[一-龯])/g, '$1')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
 
-  const strong =
-    /(?:お支払(?:い)?(?:金額)?|お買上(?:げ)?(?:合計|金額)|ご請求額|請求金額|領収金額|総合計|合計金額|支払合計|お会計|合計|合\s*計|총\s*결제금액|결제금액|총액|합계|grand\s*total|amount\s*due|total\s*due|total)/i;
+  // 不接受折扣、稅金、小計、商品單價
+  const exclude =
+    /値引|割引|クーポン|ポイント|税抜|税込|小計|消費税|内税|外税|税率|商品代金|残高|お釣|釣銭|預り|discount|subtotal|tax|change|balance|할인|세금/i;
+
+  // 只接受明確表示付款總額的文字
+  const totalLabels =
+    /お支払(?:い)?(?:金額)?|お買上(?:げ)?(?:合計|金額)|ご請求額|請求金額|領収金額|総合計|合計金額|支払合計|お会計|お支払い|合計|grand\s*total|amount\s*due|total\s*due|총결제금액|결제금액/i;
 
   const amountPattern =
-    /(?:[¥￥₩]\s*)?(\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{1,2})?/g;
+    /[¥￥₩]\s*(\d{1,3}(?:,\d{3})+|\d+)(?![\d.,])/g;
 
-  function getAmounts(line) {
-    return [...line.matchAll(amountPattern)]
+  for (const rawLine of lines) {
+    const line = normalize(rawLine);
+
+    if (exclude.test(line)) continue;
+    if (!totalLabels.test(line)) continue;
+
+    const amounts = [...line.matchAll(amountPattern)]
       .map(match => Number(match[1].replace(/,/g, '')))
       .filter(value => Number.isFinite(value) && value > 0);
+
+    if (amounts.length === 1) {
+      return amounts[0];
+    }
   }
 
-  for (const line of lines) {
-    if (exclude.test(line) || !strong.test(line)) continue;
-
-    const values = getAmounts(line);
-    if (values.length === 1) return values[0];
-
-    const currencyValues = [...line.matchAll(
-      /[¥￥₩]\s*(\d{1,3}(?:,\d{3})+|\d+)/g
-    )].map(match => Number(match[1].replace(/,/g, '')));
-
-    if (currencyValues.length === 1) return currencyValues[0];
-  }
-
+  // 沒有明確總額就留白，避免誤記帳
   return null;
 }
+
 
 
 function detectItem(text) {
