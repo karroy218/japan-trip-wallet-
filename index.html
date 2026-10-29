@@ -1187,45 +1187,64 @@ d.getDate()!==Number(day)
 return result;
 }
 
-function detectTotal(text){
-const lines=text.split(/\n/);
 
-const keywords=[
-/(?:合計|総合計|お買上計|請求額|総額|총액|합계|total|amount due)/i
-];
+function detectTotal(text) {
+  const lines = text.split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean);
 
-for(const line of lines.slice().reverse()){
-if(!keywords.some(k=>k.test(line)))continue;
+  const exclude =
+    /値引|割引|クーポン|ポイント|税抜|消費税|内税|外税|税率|お釣|釣銭|預り|お預り|残高|商品代金|値引合計|discount|subtotal|tax|change|balance|할인|세금/i;
 
-const nums=[
-...line.matchAll(
-/(?:¥|￥|₩|\$)?\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)/g
-)
-].map(m=>Number(m[1].replace(/,/g,'')))
-.filter(n=>n>0);
+  const strong =
+    /(?:お支払(?:い)?(?:金額)?|お買上(?:げ)?(?:合計|金額)|ご請求額|請求金額|領収金額|総合計|合計金額|支払合計|お会計|合計|合\s*計|총\s*결제금액|결제금액|총액|합계|grand\s*total|amount\s*due|total\s*due|total)/i;
 
-if(nums.length){
-return nums[nums.length-1];
+  const amountPattern =
+    /(?:[¥￥₩]\s*)?(\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{1,2})?/g;
+
+  function getAmounts(line) {
+    return [...line.matchAll(amountPattern)]
+      .map(match => Number(match[1].replace(/,/g, '')))
+      .filter(value => Number.isFinite(value) && value > 0);
+  }
+
+  for (const line of lines) {
+    if (exclude.test(line) || !strong.test(line)) continue;
+
+    const values = getAmounts(line);
+    if (values.length === 1) return values[0];
+
+    const currencyValues = [...line.matchAll(
+      /[¥￥₩]\s*(\d{1,3}(?:,\d{3})+|\d+)/g
+    )].map(match => Number(match[1].replace(/,/g, '')));
+
+    if (currencyValues.length === 1) return currencyValues[0];
+  }
+
+  return null;
 }
+
+
+function detectItem(text) {
+  const lines = text.split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean);
+
+  const skip =
+    /合計|小計|税込|消費税|値引|割引|税率|税抜|内税|外税|商品代金|お買上|お支払|領収|電話|伝票|番号|ポイント|nanaco|残高|レジ|receipt|subtotal|total|discount|tax|tel|cash|card|영수증|합계|총액|할인/i;
+
+  const candidates = lines.filter(line =>
+    line.length >= 3 &&
+    !skip.test(line) &&
+    /[ぁ-んァ-ヶ一-龯가-힣]/.test(line) &&
+    !/^[\d\s¥￥₩.,:/*#%()-]+$/.test(line)
+  );
+
+  return candidates.find(line =>
+    /パン|おにぎり|弁当|茶|水|コーヒー|牛乳|チョコ|サンド|麺|ラーメン|お菓子|アイス|ジュース/.test(line)
+  ) || '';
 }
 
-return null;
-}
-
-function detectItem(text){
-const lines=text.split(/\n/)
-.map(s=>s.trim())
-.filter(Boolean);
-
-const skip=
-/合計|小計|税込|消費税|total|subtotal|receipt|領収|領收|영수증|합계|총액|tax|電話|tel|カード|cash/i;
-
-return lines.find(line=>
-line.length>=3&&
-!skip.test(line)&&
-/[ぁ-んァ-ヶ一-龯가-힣A-Za-z]/.test(line)
-)||'';
-}
 
 $('runOCR').onclick=async()=>{
 const file=$('receiptPhoto').files[0];
