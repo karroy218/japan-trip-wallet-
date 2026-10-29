@@ -1271,42 +1271,6 @@ function detectTotal(text) {
 }
 
 
-  // OCR 可能將付款標籤辨識錯誤，
-  // 因此再尋找稅前小計及消費稅
-  let subtotal = null;
-  let tax = null;
-
-  for (const raw of lines) {
-    const line = clean(raw);
-    const nums = amounts(line);
-    if (nums.length === 0) continue;
-
-    if (
-      /小計|税抜|税抜き|課税対象|sub\s*total/i.test(line) &&
-      !/税率|tax\s*rate/i.test(line)
-    ) {
-      subtotal = nums[nums.length - 1];
-    }
-
-    if (
-      /消費税等|消費税|内税|外税|tax\s*amount/i.test(line) &&
-      !/税率|課税対象/i.test(line)
-    ) {
-      tax = nums[nums.length - 1];
-    }
-  }
-
-  if (subtotal !== null && tax !== null) {
-    return {
-      amount: subtotal + tax,
-      estimated: true
-    };
-  }
-
-  return { amount: null, estimated: false };
-}
-
-
 
 function detectItem(text) {
   const lines = text.split(/\r?\n/)
