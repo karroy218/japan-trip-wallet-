@@ -1194,7 +1194,7 @@ function detectTotal(text) {
     .filter(Boolean);
 
   const exclude =
-    /値引|割引|クーポン|ポイント|税抜|消費税|内税|外税|税率|お釣|釣銭|預り|お預り|残高|商品代金|値引合計|discount|subtotal|tax|change|balance|할인|세금/i;
+    /値\s*引|割引|クーポン|ポイント|税抜|消費税|内税|外税|税率|お釣|釣銭|預り|お預り|残高|商品代金|値引合計|discount|subtotal|tax|change|balance|할인|세금/i;
 
   const strong =
     /(?:お支払(?:い)?(?:金額)?|お買上(?:げ)?(?:合計|金額)|ご請求額|請求金額|領収金額|総合計|合計金額|支払合計|お会計|合計|合\s*計|총\s*결제금액|결제금액|총액|합계|grand\s*total|amount\s*due|total\s*due|total)/i;
@@ -1298,8 +1298,10 @@ $('receiptPreview').onload=()=>URL.revokeObjectURL(objectURL);
 const date=detectDate(text);
 if(date)$('expenseDate').value=date;
 
-const amount=detectTotal(text);
-if(amount)$('expenseAmount').value=amount;
+
+const amount = detectTotal(text);
+$('expenseAmount').value = amount ?? '';
+
 
 const item=detectItem(text);
 
