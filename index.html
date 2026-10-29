@@ -1251,19 +1251,19 @@ function detectTotal(text) {
     }
   }
 
-  // 3. 小計 + 稅額，必須能在收據找到相同總額
-  if (subtotal !== null && tax !== null) {
-    const calculated = subtotal + tax;
+  if (
+  subtotal !== null &&
+  tax !== null &&
+  subtotal > tax &&
+  tax > 0 &&
+  tax <= subtotal * 0.15
+) {
+  const calculated = subtotal + tax;
 
-    const matchingLines = lines.filter(raw => {
-      const line = clean(raw);
-      if (excluded.test(line)) return false;
-      return amounts(line).includes(calculated);
-    });
-
-    if (matchingLines.length > 0) {
-      return { amount: calculated, estimated: true };
-    }
+  return {
+    amount: calculated,
+    estimated: true
+  };
   }
 
   // 4. 找不到可靠總額時，留空讓使用者確認
