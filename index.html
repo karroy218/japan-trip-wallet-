@@ -1188,48 +1188,75 @@ return result;
 }
 
 
-
 function detectTotal(text) {
   const lines = text.split(/\r?\n/)
     .map(line => line.trim())
     .filter(Boolean);
 
-  // 移除日文漢字之間的空格，避免 OCR 拆字
-  function normalize(line) {
-    return line
-      .replace(/([一-龯])\s+(?=[一-龯])/g, '$1')
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
+  const clean = line => line
+    .replace(/([一-龯ぁ-んァ-ヶ])\s+(?=[一-龯ぁ-んァ-ヶ])/g, '$1')
+    .replace(/\s+/g, '');
 
-  // 不接受折扣、稅金、小計、商品單價
-  const exclude =
-    /値引|割引|クーポン|ポイント|税抜|税込|小計|消費税|内税|外税|税率|商品代金|残高|お釣|釣銭|預り|discount|subtotal|tax|change|balance|할인|세금/i;
+  const amounts = line => {
+    const matches = [...line.matchAll(
+      /(?:[¥￥\\]|JPY)?(\d{1,3}(?:,\d{3})+|\d+)(?![\d.,])/g
+    )];
+    return matches
+      .map(m => Number(m[1].replace(/,/g, '')))
+      .filter(n => Number.isFinite(n) && n > 0);
+  };
 
-  // 只接受明確表示付款總額的文字
-  const totalLabels =
-    /お支払(?:い)?(?:金額)?|お買上(?:げ)?(?:合計|金額)|ご請求額|請求金額|領収金額|総合計|合計金額|支払合計|お会計|お支払い|合計|grand\s*total|amount\s*due|total\s*due|총결제금액|결제금액/i;
+  const excluded =
+    /値引|割引|クーポン|ポイント|残高|お釣|釣銭|商品代金|税率|伝票番号|nanaco番号|subtotal|discount|change|balance/i;
 
-  const amountPattern =
-    /[¥￥₩]\s*(\d{1,3}(?:,\d{3})+|\d+)(?![\d.,])/g;
+  const payment =
+    /お支払(?:い)?(?:金額|合計)|ご請求額|請求金額|領収金額|現計|現金支払|合計金額|grandtotal|amountdue/i;
 
-  for (const rawLine of lines) {
-    const line = normalize(rawLine);
+  // 先找明確的付款總額
+  for (const raw of lines) {
+    const line = clean(raw);
+    if (excluded.test(line) || !payment.test(line)) continue;
 
-    if (exclude.test(line)) continue;
-    if (!totalLabels.test(line)) continue;
-
-    const amounts = [...line.matchAll(amountPattern)]
-      .map(match => Number(match[1].replace(/,/g, '')))
-      .filter(value => Number.isFinite(value) && value > 0);
-
-    if (amounts.length === 1) {
-      return amounts[0];
+    const nums = amounts(line);
+    if (nums.length === 1) {
+      return { amount: nums[0], estimated: false };
     }
   }
 
-  // 沒有明確總額就留白，避免誤記帳
-  return null;
+  // 找稅前小計
+  let subtotal = null;
+  for (const raw of lines) {
+    const line = clean(raw);
+    if (/小計|税抜|稅前小計/i.test(line)) {
+      const nums = amounts(line);
+      if (nums.length === 1) {
+        subtotal = nums[0];
+        break;
+      }
+    }
+  }
+
+  // 找消費稅
+  let tax = null;
+  for (const raw of lines) {
+    const line = clean(raw);
+    if (/消費税等|消費税額|消費稅|内税額|taxamount/i.test(line)) {
+      const nums = amounts(line);
+      if (nums.length === 1) {
+        tax = nums[0];
+        break;
+      }
+    }
+  }
+
+  if (subtotal !== null && tax !== null) {
+    return {
+      amount: subtotal + tax,
+      estimated: true
+    };
+  }
+
+  return { amount: null, estimated: false };
 }
 
 
@@ -1308,8 +1335,21 @@ const date=detectDate(text);
 if(date)$('expenseDate').value=date;
 
 
-const amount = detectTotal(text);
-$('expenseAmount').value = amount ?? '';
+
+const totalResult = detectTotal(text);
+
+$('expenseAmount').value =
+  totalResult.amount ?? '';
+
+if (totalResult.estimated) {
+  message(
+    'ocrStatus',
+    '⚠️ 已自動推算金額：¥' +
+    totalResult.amount.toLocaleString() +
+    '。請核對收據上的實際付款金額。'
+  );
+}
+
 
 
 const item=detectItem(text);
@@ -1319,10 +1359,13 @@ $('expenseItem').value=item;
 $('expenseTranslation').value=basicTranslate(item);
 }
 
-message(
-'ocrStatus',
-'辨識完成！請核對商品、日期及總金額後再儲存。'
-);
+
+if (!totalResult.estimated) {
+  message(
+    'ocrStatus',
+    '辨識完成！請核對商品、日期及總金額後再儲存。'
+  );
+}
 
 }catch(e){
 message(
