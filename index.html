@@ -1353,7 +1353,7 @@ const Tesseract=await getOCR();
 message('ocrStatus','正在載入日文、韓文及英文辨識資料…');
 
 worker=await Tesseract.createWorker(
-'jpn+kor+eng',
+'jpn+eng',
 1,
 {
 logger:m=>{
