@@ -1293,6 +1293,42 @@ function detectItem(text) {
 }
 
 
+async function prepareOCRImage(file) {
+  const maxSide = 1600;
+  const image = await createImageBitmap(file);
+
+  try {
+    const longest = Math.max(image.width, image.height);
+
+    if (longest <= maxSide) {
+      return file;
+    }
+
+    const scale = maxSide / longest;
+    const canvas = document.createElement('canvas');
+
+    canvas.width = Math.round(image.width * scale);
+    canvas.height = Math.round(image.height * scale);
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('無法處理圖片');
+
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    const blob = await new Promise((resolve, reject) => {
+      canvas.toBlob(
+        result => result ? resolve(result) : reject(new Error('圖片縮小失敗')),
+        'image/jpeg',
+        0.9
+      );
+    });
+
+    return blob;
+  } finally {
+    image.close();
+  }
+}
+
 $('runOCR').onclick=async()=>{
 const file=$('receiptPhoto').files[0];
 
@@ -1331,7 +1367,17 @@ message(
 }
 );
 
-const result=await worker.recognize(file);
+message('ocrStatus','正在準備收據圖片…');
+
+let ocrImage = file;
+
+try {
+  ocrImage = await prepareOCRImage(file);
+} catch (resizeError) {
+  console.warn('圖片縮小失敗，改用原始圖片辨識', resizeError);
+}
+
+const result=await worker.recognize(ocrImage);
 const text=result.data.text||'';
 
 $('ocrText').textContent=text||'沒有辨識到文字';
