@@ -1196,7 +1196,7 @@ function detectTotal(text) {
     .filter(Boolean);
 
   const clean = line => line
-    .replace(/([一-龥ぁ-ヶ])\s+(?=[一-龥ぁ-ヶ])/g, '$1')
+    .replace(/([一二三四五六七八九])\s+(?=[一二三四五六七八九])/g, '$1')
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -1216,7 +1216,10 @@ function detectTotal(text) {
   const payment =
     /お支払|お買上|ご請求額|請求金額|領収金額|総合計|合計金額|支払合計|現金支払|grand\s*total|amount\s*due/i;
 
-  // 1. 優先辨識明確的付款總額
+  const total =
+    /合\s*計|総\s*計|本\s*生\s*計|本\s*計|計\s*[\(（]?\s*税|total/i;
+
+  // 1. 優先尋找明確的付款總額
   for (const raw of lines) {
     const line = clean(raw);
     if (excluded.test(line) || !payment.test(line)) continue;
@@ -1227,7 +1230,18 @@ function detectTotal(text) {
     }
   }
 
-  // 2. 找出小計及消費稅
+  // 2. 尋找合計及常見 OCR 誤讀
+  for (const raw of lines) {
+    const line = clean(raw);
+    if (excluded.test(line) || !total.test(line)) continue;
+
+    const nums = amounts(line);
+    if (nums.length === 1) {
+      return { amount: nums[0], estimated: true };
+    }
+  }
+
+  // 3. 稅前小計加消費稅，僅作候選金額
   let subtotal = null;
   let tax = null;
 
@@ -1252,24 +1266,29 @@ function detectTotal(text) {
   }
 
   if (
-  subtotal !== null &&
-  tax !== null &&
-  subtotal > tax &&
-  tax > 0 &&
-  tax <= subtotal * 0.15
-) {
-  const calculated = subtotal + tax;
+    subtotal !== null &&
+    tax !== null &&
+    subtotal > tax &&
+    tax > 0 &&
+    tax <= subtotal * 0.15
+  ) {
+    const calculated = subtotal + tax;
 
-  return {
-    amount: calculated,
-    estimated: true
-  };
+    // 只有 OCR 中也出現相同金額才採用
+    const confirmed = lines.some(raw => {
+      const line = clean(raw);
+      if (excluded.test(line)) return false;
+      return amounts(line).includes(calculated);
+    });
+
+    if (confirmed) {
+      return { amount: calculated, estimated: true };
+    }
   }
 
-  // 4. 找不到可靠總額時，留空讓使用者確認
+  // 無法確認時，留空讓使用者核對
   return { amount: null, estimated: false };
 }
-
 
 
 function detectItem(text) {
