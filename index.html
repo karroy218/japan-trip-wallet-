@@ -1011,9 +1011,13 @@ ${e.receipt_path
 ?`<button class="secondary" data-photo="${e.id}">
 查看收據
 </button>`:'<span></span>'}
+<button class="secondary" data-edit="${e.id}">
+✏️ 編輯
+</button>
 <button class="danger" data-delete="${e.id}">
 刪除
 </button>
+
 </div>
 </div>
 `).join('')
@@ -1026,7 +1030,9 @@ b.onclick=()=>deleteExpense(b.dataset.delete);
 document.querySelectorAll('[data-photo]').forEach(b=>{
 b.onclick=()=>viewReceipt(b.dataset.photo);
 });
-
+document.querySelectorAll('[data-edit]').forEach(b=>{
+  b.onclick=()=>editExpense(b.dataset.edit);
+});
 const groups={};
 
 expenses.forEach(e=>{
@@ -1056,10 +1062,10 @@ else alert('請先選擇旅行');
 
 $('goAdd').onclick=openAdd;
 $('cancelExpense').onclick=()=>showPage('detail');
-
+let editingExpenseId = null;
 function openAdd(){
 if(!current)return;
-
+editingExpenseId = null;
 $('addTripLabel').textContent=
 current.name+' · '+current.currency_code;
 
@@ -1086,7 +1092,32 @@ message('expenseStatus','');
 
 showPage('add');
 }
+function editExpense(id){
+  const e = expenses.find(x => String(x.id) === String(id));
+  if(!e || !current) return;
 
+  openAdd();
+  editingExpenseId = e.id;
+
+  $('addTripLabel').textContent = '✏️ 編輯消費紀錄';
+  $('expenseDate').value = e.spent_on || today();
+  $('expenseShop').value = e.shop || '';
+  $('expenseItem').value = e.item_name || '';
+  $('expenseTranslation').value = e.item_translation || '';
+  $('expenseAmount').value = e.amount ?? '';
+  $('expensePayment').value = e.payment || '現金';
+  $('expensePayer').value = e.payer || '我';
+  $('expenseSplit').value = e.split_count || 1;
+
+  const options = [...$('expenseCategory').options];
+  if(options.some(o => o.value === e.category)){
+    $('expenseCategory').value = e.category;
+  }else{
+    $('expenseCategory').value = 'custom';
+    $('customCategory').value = e.category || '';
+    $('customCategory').classList.remove('hidden');
+  }
+}
 $('expenseCategory').onchange=()=>{
 $('customCategory').classList.toggle(
 'hidden',
@@ -1604,9 +1635,16 @@ return;
 payload.receipt_path=uploadedPath;
 }
 
-const {error}=await db
-.from('wallet_expenses')
-.insert(payload);
+const {error}=editingExpenseId
+  ? await db
+      .from('wallet_expenses')
+      .update(payload)
+      .eq('id',editingExpenseId)
+      .eq('user_id',user.id)
+      .eq('trip_id',current.id)
+  : await db
+      .from('wallet_expenses')
+      .insert(payload);
 
 if(error){
 if(uploadedPath){
