@@ -264,6 +264,27 @@ img.preview{max-width:100%;max-height:300px;border-radius:10px}
   <option value="date_desc">消費日期：新到舊</option>
   <option value="date_asc">消費日期：舊到新</option>
 </select>
+  <label for="paymentFilter">付款方式篩選</label>
+<select id="paymentFilter">
+  <option value="all">全部付款方式</option>
+  <option value="現金">現金</option>
+  <option value="刷卡">刷卡</option>
+  <option value="其他">其他</option>
+</select>
+
+<label for="categoryFilter">消費分類篩選</label>
+<select id="categoryFilter">
+  <option value="all">全部分類</option>
+  <option value="餐飲">餐飲</option>
+  <option value="購物">購物</option>
+  <option value="交通">交通</option>
+  <option value="住宿">住宿</option>
+  <option value="景點活動">景點活動</option>
+  <option value="文具">文具</option>
+  <option value="藥妝">藥妝</option>
+  <option value="伴手禮">伴手禮</option>
+  <option value="其他">其他</option>
+</select>
 <div id="expenseList"></div>
 </div>
 
@@ -1001,9 +1022,20 @@ expenses.sort((a, b) => {
   }
 
   return String(b.created_at || '').localeCompare(String(a.created_at || ''));
+});const paymentFilter = $('paymentFilter').value;
+const categoryFilter = $('categoryFilter').value;
+
+const filteredExpenses = expenses.filter(e => {
+  const matchPayment =
+    paymentFilter === 'all' || e.payment === paymentFilter;
+
+  const matchCategory =
+    categoryFilter === 'all' || e.category === categoryFilter;
+
+  return matchPayment && matchCategory;
 });
-$('expenseList').innerHTML=expenses.length
-?expenses.map(e=>`
+$('expenseList').innerHTML=filteredExpenses.length
+?filteredExpenses.map(e=>`
 <div class="item">
 <div class="row">
 <strong>${escapeHTML(e.shop||e.item_name||'消費')}</strong>
@@ -1068,6 +1100,13 @@ Object.entries(groups).map(([name,amount])=>`
 '<p class="muted">尚無分類統計</p>';
 }
 $('expenseSort').onchange = () => {
+  openTrip(current.id);
+};
+$('paymentFilter').onchange = () => {
+  openTrip(current.id);
+};
+
+$('categoryFilter').onchange = () => {
   openTrip(current.id);
 };
 $('backTrips').onclick=()=>showPage('home');
