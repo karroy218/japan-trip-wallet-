@@ -293,6 +293,10 @@ img.preview{max-width:100%;max-height:300px;border-radius:10px}
 <div id="categoryStats"></div>
 <button id="exportTrip" class="secondary full" style="margin-top:12px">匯出 CSV（Excel 可開啟）</button>
 </div>
+  <div class="card">
+  <h2>💳 付款方式統計</h2>
+  <div id="paymentStats"></div>
+  </div>
 </section>
 
 <section id="add" class="page">
@@ -1099,6 +1103,28 @@ Object.entries(groups).map(([name,amount])=>`
 `).join('')||
 '<p class="muted">尚無分類統計</p>';
 }
+  const paymentGroups = {
+  '現金': 0,
+  '信用卡': 0,
+  '行動支付': 0,
+  '其他': 0
+};
+
+expenses.forEach(e => {
+  const payment = e.payment || '其他';
+  if (!(payment in paymentGroups)) {
+    paymentGroups[payment] = 0;
+  }
+  paymentGroups[payment] += Number(e.amount) || 0;
+});
+
+$('paymentStats').innerHTML =
+  Object.entries(paymentGroups).map(([name, amount]) => `
+    <div class="item row">
+      <span>${escapeHTML(name)}</span>
+      <strong>${money(amount, t.currency_code)}</strong>
+    </div>
+  `).join('');
 $('expenseSort').onchange = () => {
   openTrip(current.id);
 };
